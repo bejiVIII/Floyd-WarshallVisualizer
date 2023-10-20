@@ -107,11 +107,22 @@ public class CanvasController {
 							mainPane.getChildren().remove(eventTarget);
 							
 							String vName = t.getText();
-							System.out.println("vName: " + vName);
 
-							
 							mainPane.getChildren().removeIf(child -> (child.getId().equals(vName) && child.getTypeSelector().equals("Circle")));
 							
+							for(int i = 0; i < vertices.size(); i++)
+							{
+								if(vertices.get(i).getName().equals(t.getId()))
+								{
+									vertices.remove(i);
+								}
+							}
+							System.out.print("list after deleted from text: ");
+					        for(Vertex vertex : vertices)
+					        {
+					        	System.out.print(vertex.getName() + " ");
+					        }
+					        System.out.println("\n");
 						}
 						else
 						{
