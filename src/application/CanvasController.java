@@ -37,7 +37,7 @@ public class CanvasController {
 				if(event.getButton() == MouseButton.SECONDARY)
 				{
 					mainPane.getChildren().remove(event.getTarget());
-					//System.out.println(event.getTarget());
+					System.out.println(event.getTarget());
 				}
 			}
 			
