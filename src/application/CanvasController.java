@@ -101,7 +101,8 @@ public class CanvasController implements Initializable
 				        		}
 				        	}
 			        	}
-			        		
+			        	
+			        	//vertex class
 			        	Circle vertex = new Circle();
 			        	vertex.setId(vName);
 			        	vertex.setCenterX(event.getSceneX());
@@ -112,7 +113,7 @@ public class CanvasController implements Initializable
 						Text t = new Text();
 						t.setId(vName);
 						t.setX(event.getSceneX() - 8);
-						t.setY(event.getSceneY() - 30);
+						t.setY(event.getSceneY() - 25);
 					    t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 14.0)); 
 
 						t.setText(vName);
@@ -148,17 +149,63 @@ public class CanvasController implements Initializable
 							{
 								System.out.println("A VERTEX IS SELECTED");
 								
-								double startX = v.getX();
-								double startY = v.getY();
-								double endX = c.getCenterX();
-								double endY = c.getCenterY();
-								
-								Arrow a = new Arrow(startX, startY, endX, endY, 10.0);
+								TextInputDialog td = new TextInputDialog(); 
+						        td.setHeaderText("Introduceti valoarea arcului! (Numar)");
+						        td.setContentText("Valoarea arcului: ");
+						        td.setTitle("Valoare arc");
+						        
+						        // TODO: the length of the vName must be <5.
+						        
+						        Optional<String> result = td.showAndWait();
+						        
+					        	String vName = td.getEditor().getText();
 
-								mainPane.getChildren().add(a);
-								
-								v.isSelected(false);
-								return;
+						        if (result.isPresent() && !vName.isEmpty())// ???
+						        {
+						        	//TODO:trebuie sa fie numar!!
+						        	
+						        	System.out.println(vName);
+						        	//Vertex source, Vertex target, double weigth
+						        	
+						        	Vertex tv = new Vertex();
+						        	
+						        	for(Vertex v1 : vertices)
+						        	{
+						        		if(v1.getName().equals(c.getId()))
+						        		{
+						        			v1 = tv;
+						        		}
+						        	}
+						        	double startX = v.getX();
+									double startY = v.getY();
+									double endX = c.getCenterX();
+									double endY = c.getCenterY(); 
+									
+						        	Text t = new Text();
+									t.setId(vName);
+									t.setX((startX + endX) / 2);
+									t.setY((startY + endY) / 2);
+								    t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 14.0)); 
+									t.setText(vName);
+									t.setFill(Color.BLACK);
+						        	
+						        	//v.addAdjacent(new Edge(v, tv, Double.valueOf(vName)));
+						        	//v.addRevAdjacent(new Edge(tv, v,));
+						        	
+									Arrow a = new Arrow(startX, startY, endX, endY, 10.0);
+									
+									mainPane.getChildren().add(a);
+									mainPane.getChildren().add(t);
+									v.isSelected(false);
+									return;
+						        }
+						        else
+						        {
+						        	v.isSelected(false);
+						        	Alert a = new Alert(AlertType.ERROR, "NU A FOST INTRODUSA VALOAREA ARCULUI!", ButtonType.OK);
+						        	a.show();
+						        	return;
+						        }
 							}
 						}
 						
@@ -228,9 +275,15 @@ public class CanvasController implements Initializable
 	{
 		vertices.clear();
 		System.out.print("list size after clear button pressed: " + vertices.size());
+		for(Node n : mainPane.getChildren())
+		{
+			System.out.println(n);
+		}
+		
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Circle")));
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Text")));
-
+		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Arrow")));
+		//arrow = path in mainPane.getChildren()
 	}
 
 }

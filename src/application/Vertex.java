@@ -17,6 +17,11 @@ public class Vertex extends Circle {
     
     //position of the vertex in the canvas?
 	
+    public Vertex()
+    {
+    	
+    }
+    
 	public Vertex(String name, double x, double y)
 	{
 		//TODO: see if you can work with the Circle extension
