@@ -19,7 +19,7 @@ public class Main extends Application {
 			
 			stage.setWidth(1580);
 			stage.setHeight(800);
-			stage.setResizable(false);
+			stage.setResizable(true);
 			stage.setTitle("Floyd-Warshall Algorithm Visualizer");
 			stage.setScene(scene);
 			stage.show();

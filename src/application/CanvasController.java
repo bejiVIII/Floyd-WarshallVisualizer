@@ -113,7 +113,7 @@ public class CanvasController implements Initializable
 						t.setId(vName);
 						t.setX(event.getSceneX() - 8);
 						t.setY(event.getSceneY() - 30);
-					    t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 14)); 
+					    t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 14.0)); 
 
 						t.setText(vName);
 						t.setFill(Color.BLACK);
@@ -127,7 +127,6 @@ public class CanvasController implements Initializable
 			        	a.show();
 			        	return;
 			        }
-			        
 			        
 			        System.out.print("list: ");
 			        for(Vertex vertex : vertices)
@@ -154,8 +153,8 @@ public class CanvasController implements Initializable
 								double endX = c.getCenterX();
 								double endY = c.getCenterY();
 								
-								Arrow a = new Arrow(startX, startY, endX, endY);
-								
+								Arrow a = new Arrow(startX, startY, endX, endY, 10.0);
+
 								mainPane.getChildren().add(a);
 								
 								v.isSelected(false);

@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
-public class Vertex {
+public class Vertex extends Circle {
 	
 	private String name;
 	private List<Edge> adjacents = new ArrayList<Edge>();
@@ -18,6 +19,8 @@ public class Vertex {
 	
 	public Vertex(String name, double x, double y)
 	{
+		//TODO: see if you can work with the Circle extension
+		super();
 		this.name = name;
 		this.x = x;
 		this.y = y;
@@ -40,7 +43,6 @@ public class Vertex {
 		return name;
 	}
 	
-	
 	public double getX()
 	{
 		return x;
@@ -61,19 +63,14 @@ public class Vertex {
 		return revAdjacents;
 	}
 	
-	private void addAdjacent()
+	public void addAdjacent(Edge edge)
 	{
-		
+		adjacents.add(edge);
 	}
 	
-	private void addRevAdjacent()
+	public void addRevAdjacent(Edge edge)
 	{
-		
+		revAdjacents.add(edge);
 	}
 	
-	public void addEdge(Edge edge)
-	{
-		//addAdjacent
-		//addRevAdjacent
-	}
 }
