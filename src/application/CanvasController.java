@@ -5,35 +5,27 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Control;
-import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Arc;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.CubicCurve;
-import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 
 public class CanvasController implements Initializable
 {
@@ -43,26 +35,55 @@ public class CanvasController implements Initializable
 	@FXML
 	private Button clearButton;
 	@FXML
-	private ComboBox<String> placingComboBox = new ComboBox<String>();;
+	private ComboBox<String> placingComboBox = new ComboBox<String>();
+	@FXML
+	private TextFlow textFlowResults = new TextFlow();
+	@FXML
+	private ScrollPane resultsPane;
+	
 	
 	private ArrayList<Vertex> vertices = new ArrayList<Vertex>();
 	
-	private boolean isSelecting = false;
+	private ArrayList<Edge> edges = new ArrayList<Edge>();
+	private ArrayList<CurvedEdge> curvedEdges = new ArrayList<CurvedEdge>();
+	String[][] V;
+	String[][] P;
 	
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1)
 	{
-		System.out.println("in init");
-		
 		placingComboBox.getItems().add("VARF");
 		placingComboBox.getItems().add("ARC");
-
+		
 		mainPane.addEventHandler(MouseEvent.MOUSE_CLICKED, hnd);
-
-		System.out.println("sus");
+        mainPane.setOnScroll(this::imageScrolled);
+        //check mainscene
+        resultsPane.setVisible(false);
+        //textFlowResults.setStyle("-fx-background-color: black;");
+        
+		System.out.println("Main controller initialized.");
 	}
 	
+	private void setImageZoom(double factor) {
+        mainPane.setScaleX(factor);
+        mainPane.setScaleY(factor);
+    }
 	
+	private void imageScrolled(ScrollEvent event) {
+        // When holding CTRL mouse wheel will be used for zooming
+        if (event.isControlDown()) {
+        	System.out.println(event.getDeltaY());
+            double delta = event.getDeltaY();
+            double adjust = delta / 1000.0;
+            double zoom = Math.min(10, Math.max(0.1, mainPane.getScaleX() + adjust));
+            if(zoom < 1.0 || zoom > 2.0)
+            {
+            	return;
+            }
+            setImageZoom(zoom);
+            event.consume();
+        }
+    }
 	
 	EventHandler<MouseEvent> hnd = new EventHandler<MouseEvent>()
 	{
@@ -71,7 +92,6 @@ public class CanvasController implements Initializable
 
 			if(event.getButton() == MouseButton.PRIMARY)
 			{
-
 				if(placingComboBox.getValue() == null || placingComboBox.getValue() == "VARF")
 				{
 					TextInputDialog td = new TextInputDialog(); 
@@ -90,38 +110,36 @@ public class CanvasController implements Initializable
 			        	{
 			        		for(Vertex v: vertices)
 				        	{
-				        		if(v.getName().equals(vName))
+				        		if(String.valueOf(v.getId()).equals(vName))
 				        		{
-						        	//System.out.println(vName);
-						        	//System.out.println(v.getName());
-
 				        			Alert a = new Alert(AlertType.ERROR, "UN VARF CU ACEST NUME EXISTA DEJA!", ButtonType.OK);
 						        	a.show();
 						        	return;
 				        		}
 				        	}
-			        	}
+			        	}			       
 			        	
-			        	//vertex class
-			        	Circle vertex = new Circle();
-			        	vertex.setId(vName);
-			        	vertex.setCenterX(event.getSceneX());
-			        	vertex.setCenterY(event.getSceneY());
-			        	vertex.setRadius(20);
-			        	vertex.setFill(Color.RED);
+						try 
+						{ 
+							Integer.parseInt(vName); 
+						}  
+						catch (NumberFormatException e)  
+						{
+							Alert a = new Alert(AlertType.ERROR, "INTRODUCETI UN NUMAR!", ButtonType.OK);
+				        	a.show();
+				        	return;
+						} 
 						
-						Text t = new Text();
-						t.setId(vName);
-						t.setX(event.getSceneX() - 8);
-						t.setY(event.getSceneY() - 25);
-					    t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 14.0)); 
+			        	Vertex vertex = new Vertex(Integer.valueOf(vName), event.getSceneX(), event.getSceneY(), 20, Color.RED);
 
-						t.setText(vName);
-						t.setFill(Color.BLACK);
-						
 						mainPane.getChildren().add(vertex);
-						mainPane.getChildren().add(t);
-				        vertices.add(new Vertex(vName, event.getSceneX(), event.getSceneY()));
+						mainPane.getChildren().add(vertex.getIdText());
+				        vertices.add(vertex);
+				        
+				        //HERE w
+				   
+				        System.out.println("Vertices size: " + vertices.size());
+				        
 				        System.out.println("Added vertex with name: " + vName);
 			        } else {
 			        	Alert a = new Alert(AlertType.ERROR, "NUME VARFUS!!", ButtonType.OK);
@@ -137,15 +155,15 @@ public class CanvasController implements Initializable
 			        System.out.println("\n");
 				} 
 				else // IF COMBOBOX IS ON "ARC"
-		        {		
-					//TODO: BUCLA
+		        {
+					System.out.println(eventTarget.toString());
 					if(eventTarget.toString().contains("Circle"))
 					{
-						Circle c = (Circle)eventTarget;
+						Vertex tv = (Vertex)eventTarget;
 
-						for(Vertex v : vertices)
+						for(Vertex sv : vertices)
 						{
-							if(v.isSelected())
+							if(sv.isSelected()) // IF VERTEX ALREADY SELECTED
 							{
 								System.out.println("A VERTEX IS SELECTED");
 								
@@ -156,52 +174,85 @@ public class CanvasController implements Initializable
 						        
 						        // TODO: the length of the vName must be <5.
 						        
-						        Optional<String> result = td.showAndWait();
+						        Optional<String> result = td.showAndWait(); // ??
 						        
-					        	String vName = td.getEditor().getText();
-
-						        if (result.isPresent() && !vName.isEmpty())// ???
+					        	String edgeValue = td.getEditor().getText();
+					        	
+						        if (!edgeValue.isEmpty())
 						        {
-						        	//TODO:trebuie sa fie numar!!
-						        	
-						        	System.out.println(vName);
-						        	//Vertex source, Vertex target, double weigth
-						        	
-						        	Vertex tv = new Vertex();
-						        	
-						        	for(Vertex v1 : vertices)
+						        	double startX = sv.getCenterX();
+									double startY = sv.getCenterY();
+									double endX = tv.getCenterX();
+									double endY = tv.getCenterY();
+									
+						        	if(sv.getName() == tv.getName()) //BUCLA
 						        	{
-						        		if(v1.getName().equals(c.getId()))
-						        		{
-						        			v1 = tv;
-						        		}
+						        		System.out.println(edgeValue);
+						        		System.out.println("BUCLA");
+						        		try 
+										{ 
+											Integer.parseInt(edgeValue); 
+										}  
+										catch (NumberFormatException e)  
+										{
+											Alert a = new Alert(AlertType.ERROR, "INTRODUCETI UN NUMAR!", ButtonType.OK);
+								        	a.show();
+								        	return;
+										} 
+						        		
+						        		CurvedEdge ce = new CurvedEdge(
+						        				Integer.valueOf(edgeValue),
+						        				sv,
+						        				tv,
+						        				startX,
+						        				startY,
+						        				startX - 280,
+						        				startY,
+						        				startX,
+						        				startY - 280,
+						        				startX,
+						        				startY);
+						        		
+						        		curvedEdges.add(ce);
+										//mdah
+						        		sv.addSuccessor(tv);
+						        		tv.addPredecessor(sv);
+						        		sv.setFill(Color.RED);
+						        	    mainPane.getChildren().add(ce);
+										mainPane.getChildren().add(ce.getTextValue());
 						        	}
-						        	double startX = v.getX();
-									double startY = v.getY();
-									double endX = c.getCenterX();
-									double endY = c.getCenterY(); 
-									
-						        	Text t = new Text();
-									t.setId(vName);
-									t.setX((startX + endX) / 2);
-									t.setY((startY + endY) / 2);
-								    t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 14.0)); 
-									t.setText(vName);
-									t.setFill(Color.BLACK);
-						        	
-						        	//v.addAdjacent(new Edge(v, tv, Double.valueOf(vName)));
-						        	//v.addRevAdjacent(new Edge(tv, v,));
-						        	
-									Arrow a = new Arrow(startX, startY, endX, endY, 10.0);
-									
-									mainPane.getChildren().add(a);
-									mainPane.getChildren().add(t);
-									v.isSelected(false);
+						        	else // DACA NU E BUCLA
+						        	{
+						        		try 
+										{ 
+											Integer.parseInt(edgeValue); 
+										}  
+										catch (NumberFormatException e)  
+										{
+											Alert a = new Alert(AlertType.ERROR, "INTRODUCETI UN NUMAR!", ButtonType.OK);
+								        	a.show();
+								        	return;
+										} 						        		
+						        		
+						        		System.out.println(edgeValue);
+						        		
+						        		Edge e = new Edge(Integer.valueOf(edgeValue), sv, tv, startX, startY, endX, endY, 10.0);
+						        		
+						        		edges.add(e);
+						        		sv.addSuccessor(tv);
+						        		tv.addPredecessor(sv);
+						        		
+						        		sv.setFill(Color.RED);
+										mainPane.getChildren().add(e);
+										mainPane.getChildren().add(e.getValueText());
+						        	}
+
+									sv.isSelected(false);
 									return;
 						        }
 						        else
 						        {
-						        	v.isSelected(false);
+						        	sv.isSelected(false);
 						        	Alert a = new Alert(AlertType.ERROR, "NU A FOST INTRODUSA VALOAREA ARCULUI!", ButtonType.OK);
 						        	a.show();
 						        	return;
@@ -211,26 +262,44 @@ public class CanvasController implements Initializable
 						
 						for(Vertex v : vertices)
 						{
-							if(v.getName().equals(c.getId()))
+							if(v.getName() == tv.getName())
 							{
 								v.isSelected(true);
-								//c.setFill(Color.DARKRED);
+								
+								v.setFill(Color.DARKRED);
 							}
 						}
 						
 						for(Vertex v : vertices)
 						{
-							System.out.println(v.getName() + "[x: " + v.getX() + ", y: " + v.getY() + "]");
+							System.out.println(v.getName() + "[x: " + v.getCenterX() + ", y: " + v.getCenterY() + "]");
 						}
 					}
 		        }
 		    }
 			
+			//TODO: REMOVE NODES WITH RIGHT CLICK
 			if(event.getButton() == MouseButton.SECONDARY)
 			{
-				//TODO: edge remove uwu
+				
 				if(eventTarget.toString().contains("AnchorPane"))
 				{
+					for(Vertex v : vertices)
+					{
+						System.out.print("Succesorii varfului " + v.getName() + ": ");
+						for(Vertex s : v.getSuccessors())
+						{
+							System.out.print(s.getName() + " ");
+						}
+						System.out.println("");
+						
+						System.out.print("Predecesorii varfului " + v.getName() + ": ");
+						for(Vertex s : v.getPredecessors())
+						{
+							System.out.print(s.getName() + " ");
+						}
+						System.out.println("");
+					}
 					return;
 				}
 				else if(eventTarget.toString().contains("Text"))
@@ -241,11 +310,22 @@ public class CanvasController implements Initializable
 						
 					String vName = t.getText();
 
-					mainPane.getChildren().removeIf(child -> (child.getId().equals(vName) && child.getTypeSelector().equals("Circle")));
-						
+					System.out.println("children: ");
+					for(int i = 0; i < mainPane.getChildren().size(); i++)
+					{
+						if(mainPane.getTypeSelector().equals("Vertex"))
+						{
+							System.out.println(mainPane.getChildren().get(i));
+						}
+					}
+					
+					//setid for vertices
+					//mainPane.getChildren().removeIf(child -> (child.getId().equals(vName) && child.getTypeSelector().equals("Vertex")));
+					
+					
 					for(int i = 0; i < vertices.size(); i++)
 					{
-						if(vertices.get(i).getName().equals(t.getId()))
+						if(vertices.get(i).getName() == Integer.valueOf(t.getId()))
 						{
 							vertices.remove(i);
 						}
@@ -254,36 +334,236 @@ public class CanvasController implements Initializable
 					System.out.print("list after deleted from text: ");
 			        for(Vertex vertex : vertices)
 			        {
-			        	System.out.print(vertex.getName() + " ");
+			        	System.out.print(vertex.getId() + " ");
 			        }
 			        System.out.println("\n");
 				}
-				else
+				else if(eventTarget.toString().contains("CubicCurve"))
 				{
-					
+					//TODO: edge remove uwu
+					//TODO: ...
+					//TODO: the arrow gets removed when the vertex associated with it gets removed.
+
 				}
-				
-			}
-			else
-			{
 				
 			}
 		}
 	};
 	
+	public void Execute()
+	{
+
+		resultsPane.setVisible(true);
+		
+		V = new String[vertices.size()][vertices.size()];
+		P = new String[vertices.size()][vertices.size()];
+
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{	
+				V[i][j] = "0";
+				P[i][j] = "∅";
+			}
+		}
+
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{	
+				if(i != j)
+				{
+					for(Edge e : edges)
+					{
+						if(e.getVSource().getName() == i + 1 && e.getVTarget().getName() == j + 1)
+						{
+							V[i][j] = String.valueOf(e.getValue());
+							continue;
+						}
+					}
+				}
+			}
+		}
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{	
+				if(i != j)
+				{
+					if(V[i][j] == "0")
+					{
+						V[i][j] = String.valueOf(Double.POSITIVE_INFINITY);
+					}
+				}
+			}
+		}
+		Text tv = new Text("V: \n");
+		tv.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+		textFlowResults.getChildren().add(tv);
+		
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{
+				if(V[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
+				{
+					Text t = new Text("inf ");
+					t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+					textFlowResults.getChildren().add(t);
+				}
+				else
+				{
+					Text t = new Text(String.valueOf(V[i][j] + " "));
+					t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+					textFlowResults.getChildren().add(t);
+				}
+				
+			}
+			Text t = new Text(String.valueOf("\n"));
+			//∅
+			textFlowResults.getChildren().add(t);
+			System.out.println("");
+		}
+		Text vSpace = new Text(String.valueOf("\n\n"));
+		//∅
+		textFlowResults.getChildren().add(vSpace);
+		System.out.println("");
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{
+				if(i == j || V[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
+				{
+					P[i][j] = "∅";
+				}
+				else if(i != j)
+				{
+					P[i][j] = String.valueOf(i + 1);
+				}
+			}
+		}
+		
+		Text tp = new Text("P: \n");
+		tp.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+		textFlowResults.getChildren().add(tp);
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{
+				Text t = new Text(String.valueOf(P[i][j] + " "));
+				t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+				textFlowResults.getChildren().add(t);
+			}
+			Text t = new Text(String.valueOf("\n"));
+			//∅
+			textFlowResults.getChildren().add(t);
+		}
+		Text pSpace = new Text(String.valueOf("\n\n"));
+		//∅
+		textFlowResults.getChildren().add(pSpace);
+		
+		// THE ACTUAL ITERATIONS
+		double altDist = 0.0;
+		for(int k = 0; k < vertices.size(); k++)
+		{
+			Text tk = new Text("T" + (k + 1) + "(V): \n");
+			tk.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+			textFlowResults.getChildren().add(tk);
+			for(int i = 0; i < vertices.size(); i++)
+			{
+				for(int j = 0; j < vertices.size(); j++)
+				{
+					if(V[i][k].equals("inf"))
+					{
+						altDist = Double.POSITIVE_INFINITY + Double.parseDouble(V[k][j]);
+					}
+					else if(V[k][j].equals("inf"))
+					{
+						altDist = Double.parseDouble(V[i][k]) + Double.POSITIVE_INFINITY; 
+					}
+					else if(V[i][k].equals("inf") && V[k][j].equals("inf"))
+					{
+						altDist = Double.POSITIVE_INFINITY + Double.POSITIVE_INFINITY; // which is double.positive_infinity
+					}
+					else
+					{
+						altDist = Double.parseDouble(V[i][k]) + Double.parseDouble(V[k][j]);
+					}
+					if(Double.parseDouble(V[i][j]) > altDist)
+					{
+						
+						V[i][j] = String.valueOf((int)altDist);
+						P[i][j] = String.valueOf(P[k][j]);
+					}
+					//display
+					if(V[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
+					{
+						Text t = new Text("inf ");
+						t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+						textFlowResults.getChildren().add(t);
+					}
+					else
+					{
+						Text t = new Text(String.valueOf(V[i][j] + " "));
+						t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+						textFlowResults.getChildren().add(t);
+					}
+					
+				}
+				Text t = new Text(String.valueOf("\n"));
+				textFlowResults.getChildren().add(t);
+			}
+			
+			Text vkSpace = new Text(String.valueOf("\n\n"));
+			textFlowResults.getChildren().add(vkSpace);
+			
+			for(int i = 0; i < vertices.size(); i++)
+			{
+				for(int j = 0; j < vertices.size(); j++)
+				{
+					if(i == j || V[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
+					{
+						P[i][j] = "∅";
+					}
+				}
+			}
+			
+			Text tpk = new Text("P: \n");
+			tpk.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+			textFlowResults.getChildren().add(tpk);
+			for(int i = 0; i < vertices.size(); i++)
+			{
+				for(int j = 0; j < vertices.size(); j++)
+				{
+					Text t = new Text(String.valueOf(P[i][j] + " "));
+					t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
+					textFlowResults.getChildren().add(t);
+				}
+				Text t = new Text(String.valueOf("\n"));
+				
+				textFlowResults.getChildren().add(t);
+			}
+			
+			Text t = new Text(String.valueOf("\n"));
+		
+			textFlowResults.getChildren().add(t);
+			
+		}
+		
+		Text pkSpace = new Text(String.valueOf("\n\n"));
+		textFlowResults.getChildren().add(pkSpace);
+	}
+	
 	public void clearCanvas()
 	{
 		vertices.clear();
+		edges.clear();
 		System.out.print("list size after clear button pressed: " + vertices.size());
-		for(Node n : mainPane.getChildren())
-		{
-			System.out.println(n);
-		}
 		
-		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Circle")));
+		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Vertex")));
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Text")));
-		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Arrow")));
-		//arrow = path in mainPane.getChildren()
+		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Edge")));
+		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("CurvedEdge")));
 	}
-
 }
