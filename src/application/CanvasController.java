@@ -40,14 +40,16 @@ public class CanvasController implements Initializable
 	private TextFlow textFlowResults = new TextFlow();
 	@FXML
 	private ScrollPane resultsPane;
-	
+	int numberOfVertex = 1;
 	
 	private ArrayList<Vertex> vertices = new ArrayList<Vertex>();
-	
 	private ArrayList<Edge> edges = new ArrayList<Edge>();
 	private ArrayList<CurvedEdge> curvedEdges = new ArrayList<CurvedEdge>();
+	
 	String[][] V;
 	String[][] P;
+	
+	//TODO: make the canvas zoomable and pannable.
 	
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1)
@@ -58,6 +60,8 @@ public class CanvasController implements Initializable
 		mainPane.addEventHandler(MouseEvent.MOUSE_CLICKED, hnd);
         mainPane.setOnScroll(this::imageScrolled);
         //check mainscene
+        resultsPane.setMaxHeight(Double.POSITIVE_INFINITY);
+        textFlowResults.setMaxHeight(Double.POSITIVE_INFINITY);
         resultsPane.setVisible(false);
         //textFlowResults.setStyle("-fx-background-color: black;");
         
@@ -94,69 +98,49 @@ public class CanvasController implements Initializable
 			{
 				if(placingComboBox.getValue() == null || placingComboBox.getValue() == "VARF")
 				{
-					TextInputDialog td = new TextInputDialog(); 
-			        td.setHeaderText("Introduceti numele varfului!");
-			        td.setContentText("Numele varfului: ");
-			        td.setTitle("Nume varf");
-			        
-			        // TODO: the length of the vName must be <5.
-			        
-			        Optional<String> result = td.showAndWait();
-			        
-		        	String vName = td.getEditor().getText();
-
-			        if (result.isPresent() && !vName.isEmpty()) { // ???
-			        	if(vertices.size() > 0)
-			        	{
-			        		for(Vertex v: vertices)
-				        	{
-				        		if(String.valueOf(v.getId()).equals(vName))
-				        		{
-				        			Alert a = new Alert(AlertType.ERROR, "UN VARF CU ACEST NUME EXISTA DEJA!", ButtonType.OK);
-						        	a.show();
-						        	return;
-				        		}
-				        	}
-			        	}			       
-			        	
-						try 
-						{ 
-							Integer.parseInt(vName); 
-						}  
-						catch (NumberFormatException e)  
-						{
-							Alert a = new Alert(AlertType.ERROR, "INTRODUCETI UN NUMAR!", ButtonType.OK);
-				        	a.show();
-				        	return;
-						} 
+					
+					//TODO: what if we remove a vertex
+	
+					if(vertices.size() == 0)
+					{
+						numberOfVertex = 1;
+					}
 						
-			        	Vertex vertex = new Vertex(Integer.valueOf(vName), event.getSceneX(), event.getSceneY(), 20, Color.RED);
+					Vertex vertex = new Vertex(numberOfVertex, event.getSceneX(), event.getSceneY(), 20, Color.RED);
+	
+					mainPane.getChildren().add(vertex);
+					mainPane.getChildren().add(vertex.getIdText());
+					vertices.add(vertex);
 
-						mainPane.getChildren().add(vertex);
-						mainPane.getChildren().add(vertex.getIdText());
-				        vertices.add(vertex);
-				        
-				        //HERE w
-				   
-				        System.out.println("Vertices size: " + vertices.size());
-				        
-				        System.out.println("Added vertex with name: " + vName);
-			        } else {
-			        	Alert a = new Alert(AlertType.ERROR, "NUME VARFUS!!", ButtonType.OK);
-			        	a.show();
-			        	return;
-			        }
-			        
-			        System.out.print("list: ");
-			        for(Vertex vertex : vertices)
-			        {
-			        	System.out.print(vertex.getName() + " ");
-			        }
-			        System.out.println("\n");
+					System.out.println("Vertices size: " + vertices.size());
+					System.out.println("Added vertex: " + numberOfVertex);
+					
+					numberOfVertex++;
+					System.out.print("list: ");
+					
+					for(Vertex v : vertices)
+					{
+						System.out.print(v.getName() + " ");
+					}
+					System.out.println("\n");
 				} 
 				else // IF COMBOBOX IS ON "ARC"
 		        {
+					if(eventTarget.toString().contains("AnchorPane"))
+					{
+						for(Vertex sv : vertices)
+						{
+							if(sv.isSelected()) // IF VERTEX ALREADY SELECTED
+							{
+								sv.isSelected(false);
+							}
+						}
+						
+						return;
+					}
+					
 					System.out.println(eventTarget.toString());
+					
 					if(eventTarget.toString().contains("Circle"))
 					{
 						Vertex tv = (Vertex)eventTarget;
@@ -165,16 +149,15 @@ public class CanvasController implements Initializable
 						{
 							if(sv.isSelected()) // IF VERTEX ALREADY SELECTED
 							{
+
 								System.out.println("A VERTEX IS SELECTED");
 								
 								TextInputDialog td = new TextInputDialog(); 
 						        td.setHeaderText("Introduceti valoarea arcului! (Numar)");
 						        td.setContentText("Valoarea arcului: ");
 						        td.setTitle("Valoare arc");
-						        
-						        // TODO: the length of the vName must be <5.
-						        
-						        Optional<String> result = td.showAndWait(); // ??
+						        						        
+						        td.showAndWait();
 						        
 					        	String edgeValue = td.getEditor().getText();
 					        	
@@ -265,8 +248,6 @@ public class CanvasController implements Initializable
 							if(v.getName() == tv.getName())
 							{
 								v.isSelected(true);
-								
-								v.setFill(Color.DARKRED);
 							}
 						}
 						
@@ -279,27 +260,13 @@ public class CanvasController implements Initializable
 		    }
 			
 			//TODO: REMOVE NODES WITH RIGHT CLICK
+			//TODO: AFISARE SUCCESORII SI PREDECESORII VARFURILOR textFlowResults
+			
 			if(event.getButton() == MouseButton.SECONDARY)
 			{
-				
 				if(eventTarget.toString().contains("AnchorPane"))
 				{
-					for(Vertex v : vertices)
-					{
-						System.out.print("Succesorii varfului " + v.getName() + ": ");
-						for(Vertex s : v.getSuccessors())
-						{
-							System.out.print(s.getName() + " ");
-						}
-						System.out.println("");
-						
-						System.out.print("Predecesorii varfului " + v.getName() + ": ");
-						for(Vertex s : v.getPredecessors())
-						{
-							System.out.print(s.getName() + " ");
-						}
-						System.out.println("");
-					}
+					printSuccessorsAndPredecessors();
 					return;
 				}
 				else if(eventTarget.toString().contains("Text"))
@@ -319,6 +286,7 @@ public class CanvasController implements Initializable
 						}
 					}
 					
+					//TODO:
 					//setid for vertices
 					//mainPane.getChildren().removeIf(child -> (child.getId().equals(vName) && child.getTypeSelector().equals("Vertex")));
 					
@@ -350,14 +318,12 @@ public class CanvasController implements Initializable
 		}
 	};
 	
-	public void Execute()
+	public void initializeAndPrintMatrices()
 	{
-
-		resultsPane.setVisible(true);
-		
 		V = new String[vertices.size()][vertices.size()];
 		P = new String[vertices.size()][vertices.size()];
 
+		//Initialize V with "0" and P with "∅"
 		for(int i = 0; i < vertices.size(); i++)
 		{
 			for(int j = 0; j < vertices.size(); j++)
@@ -375,7 +341,12 @@ public class CanvasController implements Initializable
 				{
 					for(Edge e : edges)
 					{
-						if(e.getVSource().getName() == i + 1 && e.getVTarget().getName() == j + 1)
+						int vertexSourceName = e.getVSource().getName();
+						int vertexTargetName = e.getVTarget().getName();
+						
+						// i + 1 and j + 1 because i and j start from 0 and
+						// we have 1 -> n vertices
+						if(vertexSourceName == i + 1 &&  vertexTargetName == j + 1)
 						{
 							V[i][j] = String.valueOf(e.getValue());
 							continue;
@@ -389,46 +360,16 @@ public class CanvasController implements Initializable
 		{
 			for(int j = 0; j < vertices.size(); j++)
 			{	
-				if(i != j)
-				{
-					if(V[i][j] == "0")
-					{
-						V[i][j] = String.valueOf(Double.POSITIVE_INFINITY);
-					}
+				if(i != j && V[i][j] == "0")
+				{	
+					V[i][j] = String.valueOf(Double.POSITIVE_INFINITY);	
 				}
 			}
 		}
-		Text tv = new Text("V: \n");
-		tv.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-		textFlowResults.getChildren().add(tv);
 		
-		for(int i = 0; i < vertices.size(); i++)
-		{
-			for(int j = 0; j < vertices.size(); j++)
-			{
-				if(V[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
-				{
-					Text t = new Text("inf ");
-					t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-					textFlowResults.getChildren().add(t);
-				}
-				else
-				{
-					Text t = new Text(String.valueOf(V[i][j] + " "));
-					t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-					textFlowResults.getChildren().add(t);
-				}
-				
-			}
-			Text t = new Text(String.valueOf("\n"));
-			//∅
-			textFlowResults.getChildren().add(t);
-			System.out.println("");
-		}
-		Text vSpace = new Text(String.valueOf("\n\n"));
-		//∅
-		textFlowResults.getChildren().add(vSpace);
-		System.out.println("");
+		textFlowAppend("V: ", 20);
+		printMatrixWithInfinityElements(V);
+		
 		for(int i = 0; i < vertices.size(); i++)
 		{
 			for(int j = 0; j < vertices.size(); j++)
@@ -444,32 +385,78 @@ public class CanvasController implements Initializable
 			}
 		}
 		
-		Text tp = new Text("P: \n");
-		tp.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-		textFlowResults.getChildren().add(tp);
+		textFlowAppend("P: ", 20);
+		printMatrix(P);
+	}
+	
+	public void printMatrix(String[][] m)
+	{
+		textFlowAppend();
+
 		for(int i = 0; i < vertices.size(); i++)
 		{
 			for(int j = 0; j < vertices.size(); j++)
 			{
-				Text t = new Text(String.valueOf(P[i][j] + " "));
-				t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-				textFlowResults.getChildren().add(t);
+				textFlowAppend(String.valueOf(m[i][j] + " "), 20);
 			}
-			Text t = new Text(String.valueOf("\n"));
-			//∅
-			textFlowResults.getChildren().add(t);
+			textFlowAppend();
 		}
-		Text pSpace = new Text(String.valueOf("\n\n"));
-		//∅
-		textFlowResults.getChildren().add(pSpace);
-		
-		// THE ACTUAL ITERATIONS
+		textFlowAppend();
+		textFlowAppend();
+	}
+	
+	public void printMatrixWithInfinityElements(String[][] m)
+	{
+		textFlowAppend();
+
+		for(int i = 0; i < vertices.size(); i++)
+		{
+			for(int j = 0; j < vertices.size(); j++)
+			{
+				if(m[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
+				{
+					textFlowAppend("inf ", 20);
+				}
+				else
+				{
+					textFlowAppend(String.valueOf(m[i][j] + " "), 20);
+
+				}
+			}
+			textFlowAppend();
+		}
+		textFlowAppend();
+		textFlowAppend();
+	}
+	
+	public void printSuccessorsAndPredecessors()
+	{
+		for(Vertex v : vertices)
+		{
+			System.out.print("Succesorii varfului " + v.getName() + ": ");
+			for(Vertex s : v.getSuccessors())
+			{
+				System.out.print(s.getName() + " ");
+			}
+			System.out.println("");
+			
+			System.out.print("Predecesorii varfului " + v.getName() + ": ");
+			for(Vertex s : v.getPredecessors())
+			{
+				System.out.print(s.getName() + " ");
+			}
+			System.out.println("");
+		}
+	}
+	
+	public void executeFloydWarshallAndPrint()
+	{
 		double altDist = 0.0;
 		for(int k = 0; k < vertices.size(); k++)
 		{
-			Text tk = new Text("T" + (k + 1) + "(V): \n");
-			tk.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-			textFlowResults.getChildren().add(tk);
+			textFlowAppend("T" + (k + 1) + "(V): ", 20);
+			textFlowAppend();
+
 			for(int i = 0; i < vertices.size(); i++)
 			{
 				for(int j = 0; j < vertices.size(); j++)
@@ -490,33 +477,28 @@ public class CanvasController implements Initializable
 					{
 						altDist = Double.parseDouble(V[i][k]) + Double.parseDouble(V[k][j]);
 					}
+					
 					if(Double.parseDouble(V[i][j]) > altDist)
 					{
 						
 						V[i][j] = String.valueOf((int)altDist);
 						P[i][j] = String.valueOf(P[k][j]);
 					}
-					//display
 					if(V[i][j].equals(String.valueOf(Double.POSITIVE_INFINITY)))
 					{
-						Text t = new Text("inf ");
-						t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-						textFlowResults.getChildren().add(t);
+						textFlowAppend("inf ", 20);
 					}
 					else
 					{
-						Text t = new Text(String.valueOf(V[i][j] + " "));
-						t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-						textFlowResults.getChildren().add(t);
+						textFlowAppend(String.valueOf(V[i][j] + " "), 20);
 					}
 					
 				}
-				Text t = new Text(String.valueOf("\n"));
-				textFlowResults.getChildren().add(t);
+				textFlowAppend();
 			}
 			
-			Text vkSpace = new Text(String.valueOf("\n\n"));
-			textFlowResults.getChildren().add(vkSpace);
+			textFlowAppend();
+			textFlowAppend();
 			
 			for(int i = 0; i < vertices.size(); i++)
 			{
@@ -529,41 +511,52 @@ public class CanvasController implements Initializable
 				}
 			}
 			
-			Text tpk = new Text("P: \n");
-			tpk.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-			textFlowResults.getChildren().add(tpk);
-			for(int i = 0; i < vertices.size(); i++)
-			{
-				for(int j = 0; j < vertices.size(); j++)
-				{
-					Text t = new Text(String.valueOf(P[i][j] + " "));
-					t.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 20));
-					textFlowResults.getChildren().add(t);
-				}
-				Text t = new Text(String.valueOf("\n"));
-				
-				textFlowResults.getChildren().add(t);
-			}
-			
-			Text t = new Text(String.valueOf("\n"));
-		
-			textFlowResults.getChildren().add(t);
-			
+			textFlowAppend("P: ", 20);
+			printMatrix(P);
 		}
 		
-		Text pkSpace = new Text(String.valueOf("\n\n"));
-		textFlowResults.getChildren().add(pkSpace);
+		textFlowAppend();
+		textFlowAppend();
+	}
+	
+	public void Execute()
+	{
+		textFlowResults.getChildren().clear();
+		resultsPane.setVisible(true);
+		
+		initializeAndPrintMatrices();
+		executeFloydWarshallAndPrint();
+	}
+	
+	public void textFlowAppend(String text, double fontSize)
+	{
+		Text t = new Text(text);
+		t.setFont(Font.font("verdana", FontWeight.BOLD, fontSize));
+		textFlowResults.getChildren().add(t);
+	}
+	
+	public void textFlowAppend()
+	{
+		Text t = new Text(String.valueOf("\n"));
+		textFlowResults.getChildren().add(t);
+	}
+	
+	public void printPaths()
+	{
+		
 	}
 	
 	public void clearCanvas()
 	{
 		vertices.clear();
 		edges.clear();
-		System.out.print("list size after clear button pressed: " + vertices.size());
+		System.out.print("list size after clear button pressed: " + vertices.size() + "\n");
 		
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Vertex")));
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Text")));
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("Edge")));
 		mainPane.getChildren().removeIf(child -> (child.getTypeSelector().equals("CurvedEdge")));
+		
+		textFlowResults.getChildren().clear();
 	}
 }

@@ -84,6 +84,14 @@ public class Vertex extends Circle {
 	public void isSelected(boolean value)
 	{
 		isSelected = value;
+		if(value == true)
+		{
+			this.setFill(Color.DARKRED);
+		}
+		else
+		{
+			this.setFill(Color.RED);
+		}
 	}
 
 }
