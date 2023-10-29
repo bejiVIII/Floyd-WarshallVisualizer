@@ -2,6 +2,8 @@ package application;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -45,6 +47,7 @@ public class CanvasController implements Initializable
 	private ArrayList<Vertex> vertices = new ArrayList<Vertex>();
 	private ArrayList<Edge> edges = new ArrayList<Edge>();
 	private ArrayList<CurvedEdge> curvedEdges = new ArrayList<CurvedEdge>();
+	private ArrayList<String> shortestPath = new ArrayList<String>();
 	
 	String[][] V;
 	String[][] P;
@@ -76,7 +79,7 @@ public class CanvasController implements Initializable
 	private void imageScrolled(ScrollEvent event) {
         // When holding CTRL mouse wheel will be used for zooming
         if (event.isControlDown()) {
-        	System.out.println(event.getDeltaY());
+        	//System.out.println(event.getDeltaY());
             double delta = event.getDeltaY();
             double adjust = delta / 1000.0;
             double zoom = Math.min(10, Math.max(0.1, mainPane.getScaleX() + adjust));
@@ -526,6 +529,8 @@ public class CanvasController implements Initializable
 		
 		initializeAndPrintMatrices();
 		executeFloydWarshallAndPrint();
+		
+		printPaths();
 	}
 	
 	public void textFlowAppend(String text, double fontSize)
@@ -543,7 +548,59 @@ public class CanvasController implements Initializable
 	
 	public void printPaths()
 	{
+		textFlowAppend("Drumurile de cost minim: \n", 20);
 		
+		for(int i = 1; i <= vertices.size(); i++)
+		{
+			for(int j = 1; j <= vertices.size(); j++)
+			{
+				if(i == j) continue;
+				textFlowAppend("[" + i + ", " + j + "]: ", 20);
+				doStuff(i, j);	
+			}
+		}
+	}
+	
+	public void doStuff(int source, int dest)
+	{
+		if(shortestPath.size() == 0)
+		{
+			shortestPath.add(String.valueOf(dest));
+		}
+		if(P[source - 1][dest - 1].equals("∅"))
+		{
+			ArrayList<Integer> intArr = new ArrayList<Integer>();
+			
+			for(int i = 0; i < shortestPath.size(); i++)
+			{
+				intArr.add(Integer.valueOf(shortestPath.get(i)));
+			}
+			
+			Collections.reverse(intArr);
+			
+			for(int i = 0; i < intArr.size(); i++)
+			{
+				if(i != intArr.size() - 1)
+				{
+					textFlowAppend(intArr.get(i) + "->", 20);
+				}
+				else
+				{
+					textFlowAppend(String.valueOf(intArr.get(i)), 20);
+				}
+			}
+			
+			shortestPath.clear();
+			intArr.clear();
+			textFlowAppend();
+			return;
+		}
+		else
+		{
+			shortestPath.add(P[source - 1][dest - 1]);
+		}
+		
+		doStuff(source, Integer.valueOf(P[source - 1][dest - 1]));
 	}
 	
 	public void clearCanvas()
